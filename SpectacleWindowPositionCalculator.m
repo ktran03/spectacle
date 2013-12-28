@@ -9,12 +9,12 @@
 
 #pragma mark -
 
-#define AlreadyTwoThirdsOfDisplay(a, b) (abs(a.size.width - floor((b.size.width * 2.0f) / 3.0f)) < SpectacleWindowCalculationFudgeFactor) && (abs(a.size.height - b.size.height) < SpectacleWindowCalculationFudgeFactor*2)
-#define AlreadyOneHalfOfDisplay(a, b) (abs(a.size.width - (b.size.width / 2.0f)) < SpectacleWindowCalculationFudgeFactor) && (abs(a.size.height - b.size.height) < SpectacleWindowCalculationFudgeFactor*2)
+#define AlreadyTwoThirdsWidthOfDisplay(a, b) (abs(a.size.width - floor((b.size.width * 2.0f) / 3.0f)) < SpectacleWindowCalculationFudgeFactor)
+#define AlreadyOneHalfWidthOfDisplay(a, b) (abs(a.size.width - (b.size.width / 2.0f)) < SpectacleWindowCalculationFudgeFactor)
 
 
-#define AlreadyHalfVertical(a, b) (abs(a.size.height - (b.size.height / 2.0f)) < SpectacleWindowCalculationFudgeFactor) && (abs(a.size.width - b.size.width) < SpectacleWindowCalculationFudgeFactor*2)
-#define AlreadyTwoThirdsVertical(a, b) (abs(a.size.height - floor((b.size.height * 2.0f) / 3.0f)) < SpectacleWindowCalculationFudgeFactor) && (abs(a.size.width - b.size.width) < SpectacleWindowCalculationFudgeFactor*2)
+#define AlreadyOneHalfHeightOfDisplay(a, b) (abs(a.size.height - (b.size.height / 2.0f)) < SpectacleWindowCalculationFudgeFactor)
+#define AlreadyTwoThirdsHeightOfDisplay(a, b) (abs(a.size.height - floor((b.size.height * 2.0f) / 3.0f)) < SpectacleWindowCalculationFudgeFactor)
 
 
 #pragma mark -
@@ -45,7 +45,6 @@
         calculatedWindowRect.origin.y = visibleFrameOfScreen.origin.y;
     }
     
-    NSLog(@"origin = %@, size = %@", NSStringFromPoint(calculatedWindowRect.origin), NSStringFromSize(calculatedWindowRect.size));
     
     
     //Size
@@ -77,8 +76,17 @@
         calculatedWindowRect.size.width = visibleFrameOfScreen.size.width;
     
     } else if (MovingToUpperOrLowerLeftOfDisplay(action) || MovingToUpperOrLowerRightDisplay(action)) {
-        calculatedWindowRect.size.width = floor(visibleFrameOfScreen.size.width / 2.0f);
+        
+        if ([SpectacleWindowPositionCalculator quarters_HalfToTwoThird: windowRect visibleFrameOfScreen: visibleFrameOfScreen withAction: action]) {
+            calculatedWindowRect.size.width = floor((visibleFrameOfScreen.size.width * 2.0f) / 3.0f);
+        } else if ([SpectacleWindowPositionCalculator quarters_TwoThirdToOneThird: windowRect visibleFrameOfScreen: visibleFrameOfScreen withAction: action]){
+            calculatedWindowRect.size.width = floor(visibleFrameOfScreen.size.width / 3.0f);
+        } else {
+            calculatedWindowRect.size.width = floor(visibleFrameOfScreen.size.width / 2.0f);
+        }
+        
         calculatedWindowRect.size.height = floor(visibleFrameOfScreen.size.height / 2.0f);
+
     } else if (!MovingToCenterRegionOfDisplay(action) && !MovingToThirdOfDisplay(action)) {
         calculatedWindowRect.size.width = visibleFrameOfScreen.size.width;
         calculatedWindowRect.size.height = visibleFrameOfScreen.size.height;
@@ -103,6 +111,8 @@
         calculatedWindowRect.size.width = calculatedWindowRect.size.width - 1.0f;
     }
     
+    NSLog(@"origin = %@, size = %@", NSStringFromPoint(calculatedWindowRect.origin), NSStringFromSize(calculatedWindowRect.size));
+
     return calculatedWindowRect;
 }
 
@@ -240,9 +250,9 @@
     BOOL result = NO;
     
     if (action == SpectacleWindowActionLeftHalf) {
-        result = AlreadyOneHalfOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheLeftEdgeOfScreen(windowRect, visibleFrameOfScreen);
+        result = AlreadyOneHalfWidthOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheLeftEdgeOfScreen(windowRect, visibleFrameOfScreen);
     } else if (action == SpectacleWindowActionRightHalf) {
-        result = AlreadyOneHalfOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheRightEdgeOfScreen(windowRect, visibleFrameOfScreen);
+        result = AlreadyOneHalfWidthOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheRightEdgeOfScreen(windowRect, visibleFrameOfScreen);
     }
     
     return result;
@@ -252,21 +262,23 @@
     BOOL result = NO;
     
     if (action == SpectacleWindowActionLeftHalf) {
-        result = AlreadyTwoThirdsOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheLeftEdgeOfScreen(windowRect, visibleFrameOfScreen);
+        result = AlreadyTwoThirdsWidthOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheLeftEdgeOfScreen(windowRect, visibleFrameOfScreen);
     } else if (action == SpectacleWindowActionRightHalf) {
-        result = AlreadyTwoThirdsOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheRightEdgeOfScreen(windowRect, visibleFrameOfScreen);
+        result = AlreadyTwoThirdsWidthOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheRightEdgeOfScreen(windowRect, visibleFrameOfScreen);
     }
     
     return result;
 }
 
+#pragma mark -
+
 + (BOOL)halfToTwoThird: (CGRect)windowRect visibleFrameOfScreen: (CGRect)visibleFrameOfScreen withAction: (SpectacleWindowAction)action {
     BOOL result = NO;
     
     if (action == SpectacleWindowActionTopHalf) {
-        result = AlreadyHalfVertical(windowRect, visibleFrameOfScreen) && AgainstTheTopEdgeOfScreen(windowRect, visibleFrameOfScreen);
+        result = AlreadyOneHalfHeightOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheTopEdgeOfScreen(windowRect, visibleFrameOfScreen);
     } else if (action == SpectacleWindowActionBottomHalf) {
-        result = AlreadyHalfVertical(windowRect, visibleFrameOfScreen) && AgainstTheBottomEdgeOfScreen(windowRect, visibleFrameOfScreen);
+        result = AlreadyOneHalfHeightOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheBottomEdgeOfScreen(windowRect, visibleFrameOfScreen);
     }
     
     return result;
@@ -276,12 +288,47 @@
     BOOL result = NO;
     
     if (action == SpectacleWindowActionTopHalf) {
-        result = AlreadyTwoThirdsVertical(windowRect, visibleFrameOfScreen) && AgainstTheTopEdgeOfScreen(windowRect, visibleFrameOfScreen);
+        result = AlreadyTwoThirdsHeightOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheTopEdgeOfScreen(windowRect, visibleFrameOfScreen);
     } else if (action == SpectacleWindowActionBottomHalf) {
-        result = AlreadyTwoThirdsVertical(windowRect, visibleFrameOfScreen) && AgainstTheBottomEdgeOfScreen(windowRect, visibleFrameOfScreen);
+        result = AlreadyTwoThirdsHeightOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheBottomEdgeOfScreen(windowRect, visibleFrameOfScreen);
     }
     
     return result;
 }
+
+#pragma mark -
+
++ (BOOL)quarters_HalfToTwoThird: (CGRect)windowRect visibleFrameOfScreen: (CGRect)visibleFrameOfScreen withAction: (SpectacleWindowAction)action {
+    BOOL result = NO;
+    
+    if (action == SpectacleWindowActionUpperLeft || action == SpectacleWindowActionLowerLeft) {
+        result = AlreadyOneHalfWidthOfDisplay(windowRect, visibleFrameOfScreen) && AlreadyOneHalfHeightOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheLeftEdgeOfScreen(windowRect, visibleFrameOfScreen);
+    } else if (action == SpectacleWindowActionUpperRight || action == SpectacleWindowActionLowerRight) {
+        result = AlreadyOneHalfWidthOfDisplay(windowRect, visibleFrameOfScreen) && AlreadyOneHalfHeightOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheRightEdgeOfScreen(windowRect, visibleFrameOfScreen);
+    }
+
+    return result;
+}
+
++ (BOOL)quarters_TwoThirdToOneThird: (CGRect)windowRect visibleFrameOfScreen: (CGRect)visibleFrameOfScreen withAction: (SpectacleWindowAction)action {
+    BOOL result = NO;
+    
+    if (action == SpectacleWindowActionUpperLeft || action == SpectacleWindowActionLowerLeft) {
+        result = AlreadyTwoThirdsWidthOfDisplay(windowRect, visibleFrameOfScreen) && AlreadyOneHalfHeightOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheLeftEdgeOfScreen(windowRect, visibleFrameOfScreen);
+    } else if (action == SpectacleWindowActionUpperRight || action == SpectacleWindowActionLowerRight) {
+        result = AlreadyTwoThirdsWidthOfDisplay(windowRect, visibleFrameOfScreen) && AlreadyOneHalfHeightOfDisplay(windowRect, visibleFrameOfScreen) && AgainstTheRightEdgeOfScreen(windowRect, visibleFrameOfScreen);
+    }
+
+    return result;
+}
+
+/*
+ AlreadyTwoThirdsWidthOfDisplay
+ AlreadyOneHalfWidthOfDisplay
+ 
+ AlreadyOneHalfHeightOfDisplay
+ AlreadyTwoThirdsHeightOfDisplay
+ 
+ */
 
 @end
